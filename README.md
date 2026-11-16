@@ -6,6 +6,14 @@
 - 前端是单个原生 HTML 文件，浅色玻璃质感界面，适配手机
 - 数据保存在服务器上的 `data/expenses.json`
 
+<p align="center">
+  <img src="docs/screenshot.jpg" alt="固定支出 · 桌面端首页" width="74%">
+  &nbsp;
+  <img src="docs/screenshot-mobile.jpg" alt="固定支出 · 手机端首页" width="22%">
+</p>
+
+<p align="center"><sub>截图为演示数据</sub></p>
+
 ## 功能
 
 | 功能 | 说明 |
@@ -60,5 +68,6 @@ public/index.html                 前端：全部界面与逻辑
 config/app.env.example            配置示例（真正的 app.env 不提交）
 deploy/guding-zhichu.service      systemd 服务
 deploy/nginx-zhichu-location.conf 反向代理 location 示例
+docs/                             README 截图
 data/                             运行时数据（不提交）
 ```

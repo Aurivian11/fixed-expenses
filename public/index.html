@@ -192,6 +192,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;fl
 /* ---------- 试算浮条 ---------- */
 .simbar{--r:999px;position:fixed;left:50%;bottom:22px;z-index:20;display:flex;align-items:center;gap:14px;padding:10px 10px 10px 20px;
   transform:translate(-50%,160%);transition:transform .45s cubic-bezier(.2,.9,.2,1);font-size:14px;max-width:calc(100vw - 32px)}
+.simbar:not(.show){visibility:hidden;transition:transform .45s cubic-bezier(.2,.9,.2,1),visibility 0s .45s}
 .simbar.show{transform:translate(-50%,0)}
 .simbar b{font-size:17px;color:var(--ok)}
 
