@@ -1,0 +1,9 @@
+# 运行时数据与私密配置，绝不提交
+data/
+backup/
+config/*
+!config/app.env.example
+__pycache__/
+*.pyc
+*.bak*
+*.tmp

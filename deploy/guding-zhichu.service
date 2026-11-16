@@ -1,0 +1,27 @@
+[Unit]
+Description=固定支出 monthly fixed expense tracker (https://example.com/zhichu/)
+Wants=network-online.target docker.service
+After=network-online.target docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/固定支出
+EnvironmentFile=/root/固定支出/config/app.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/usr/bin/python3 -B /root/固定支出/server.py --host 172.18.0.1 --port 8130
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/root/固定支出/data
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+MemoryMax=96M
+TasksMax=32
+
+[Install]
+WantedBy=multi-user.target
