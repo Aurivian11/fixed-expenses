@@ -19,6 +19,8 @@ import urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+import notify
+
 BASE = Path(__file__).resolve().parent
 PUBLIC = BASE / "public"
 DATA = BASE / "data" / "expenses.json"
@@ -45,6 +47,18 @@ def _read_data():
     if not DATA.exists():
         return None
     return json.loads(DATA.read_text("utf-8"))
+
+
+def read_state_safe():
+    try:
+        with _data_lock:
+            obj = _read_data()
+        return obj if isinstance(obj, dict) else None
+    except Exception:
+        return None
+
+
+SCHEDULER = notify.Scheduler(read_state_safe, lambda: get_rates(), BASE / "data" / "notify-state.json")
 
 
 def _rev_of(obj):
@@ -252,6 +266,12 @@ class Handler(SimpleHTTPRequestHandler):
             if not rates:
                 return self._json(503, {"error": "汇率暂不可用"})
             return self._json(200, rates)
+        if r == "/api/notify/status":
+            if not self._authed():
+                return self._json(401, {"error": "请先登录"})
+            st = SCHEDULER.status()
+            st["check"] = notify.check()
+            return self._json(200, st)
         if r.startswith("/api/"):
             return self._json(404, {"error": "not found"})
         return super().do_GET()
@@ -262,6 +282,15 @@ class Handler(SimpleHTTPRequestHandler):
             return self._login()
         if r == "/api/logout":
             return self._json(200, {"ok": True}, cookie=self._cookie("", 0))
+        if r == "/api/notify/test":
+            if not self._authed():
+                return self._json(401, {"error": "请先登录"})
+            obj, code = self._read_json()
+            if code != 200 or not isinstance(obj, dict):
+                return self._json(400, {"error": "请求不合法"})
+            want = {"telegram": bool(obj.get("telegram")), "bark": bool(obj.get("bark"))}
+            res = notify.deliver("固定支出 · 测试推送", "✓ 推送渠道正常，以后扣款前会在这里提醒你。", want)
+            return self._json(200, {"result": res})
         return self._json(404, {"error": "not found"})
 
     def do_PUT(self):
@@ -324,6 +353,7 @@ def main():
         return
     if not PASSWORD_HASH or len(SECRET) < 32:
         raise SystemExit("缺少 GZ_PASSWORD_HASH / GZ_SECRET（见 config/app.env）")
+    SCHEDULER.start()
     ThreadingHTTPServer((a.host, a.port), Handler).serve_forever()
 
 
