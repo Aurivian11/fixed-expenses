@@ -257,7 +257,13 @@ def check():
     if channels()["telegram"]:
         try:
             with urllib.request.urlopen(f"https://api.telegram.org/bot{TG_TOKEN}/getMe", timeout=10) as r:
-                res["telegram"] = "可用" if json.load(r).get("ok") else "token 无效"
+                me = json.load(r)
+            res["telegram"] = "可用" if me.get("ok") else "token 无效"
+            res["telegramBot"] = "@" + (me.get("result") or {}).get("username", "")
+            q = urllib.parse.urlencode({"chat_id": TG_CHAT})
+            with urllib.request.urlopen(f"https://api.telegram.org/bot{TG_TOKEN}/getChat?{q}", timeout=10) as r:
+                chat = (json.load(r).get("result") or {})
+            res["telegramTarget"] = "私聊" if chat.get("type") == "private" else (chat.get("title") or "群组")
         except Exception as e:
             res["telegram"] = "失败：" + _err(e)
     if channels()["bark"]:

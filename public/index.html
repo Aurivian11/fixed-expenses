@@ -501,7 +501,7 @@ body.locked .wrap,body.locked .simbar{visibility:hidden}
       <div class="field"><label for="sFee">外币手续费</label><div class="unit-in"><input class="in num" id="sFee" type="number" inputmode="decimal" min="0" max="10" step="0.1" placeholder="0"><span>%</span></div><div class="hint">信用卡刷外币通常 1%～1.5%</div></div>
     </div>
     <h4>扣款提醒</h4>
-    <label class="switch-row" for="sTg"><span><b>Telegram</b><small>推送到「信息推送」频道</small></span><input type="checkbox" id="sTg"><span class="track" aria-hidden="true"></span></label>
+    <label class="switch-row" for="sTg"><span><b>Telegram</b><small id="tgTarget">推送到你的 Telegram 机器人私聊</small></span><input type="checkbox" id="sTg"><span class="track" aria-hidden="true"></span></label>
     <div class="chan" id="chanTg"></div>
     <label class="switch-row" for="sBark"><span><b>Bark</b><small>推送到 iPhone</small></span><input type="checkbox" id="sBark"><span class="track" aria-hidden="true"></span></label>
     <div class="chan" id="chanBark"></div>
@@ -1328,6 +1328,8 @@ async function openSettings(focus) {
         : `服务器已配置 · <b class="${chk === '可用' ? 'ok' : 'bad'}">${esc(chk || '未检查')}</b>`;
     };
     chan('telegram', $('#chanTg')); chan('bark', $('#chanBark'));
+    const ck = st.check || {};
+    if (ck.telegramBot) $('#tgTarget').textContent = ck.telegramTarget === '私聊' ? `推送到 ${ck.telegramBot} 私聊（直接发给你）` : `推送到 ${ck.telegramBot} 所在的「${ck.telegramTarget}」`;
     $('#notifyPreview').textContent = st.preview && st.preview.body
       ? `${st.preview.title}\n\n${st.preview.body}`
       : '今天没有需要提醒的项目（按服务器上已保存的设置计算）。';
