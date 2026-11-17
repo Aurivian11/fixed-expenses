@@ -282,6 +282,12 @@ input[type=date].in{padding:0 10px}
 .chan{font-size:12px;color:var(--ink3);margin:-2px 0 10px 4px}
 .chan b{font-weight:600}
 .chan .ok{color:var(--ok)} .chan .bad{color:var(--bad)}
+.with-btn{display:flex;gap:8px}
+.with-btn .in{flex:1;min-width:0}
+.with-btn .mini{height:44px;flex:none;border-radius:14px;padding:0 12px}
+.hint-box{font-size:12px;color:var(--ink3);margin:0 4px 14px;line-height:1.7}
+.hint-box b{color:var(--ink2);font-weight:600}
+#detectBox .mini{margin:4px 6px 0 0}
 .preview{white-space:pre-wrap;font-size:12px;line-height:1.6;color:var(--ink2);padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.55);max-height:220px;overflow:auto}
 .dfoot{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;align-items:center;flex-wrap:wrap}
 .dfoot .del{margin-right:auto;color:var(--bad)}
@@ -501,10 +507,21 @@ body.locked .wrap,body.locked .simbar{visibility:hidden}
       <div class="field"><label for="sFee">外币手续费</label><div class="unit-in"><input class="in num" id="sFee" type="number" inputmode="decimal" min="0" max="10" step="0.1" placeholder="0"><span>%</span></div><div class="hint">信用卡刷外币通常 1%～1.5%</div></div>
     </div>
     <h4>扣款提醒</h4>
-    <label class="switch-row" for="sTg"><span><b>Telegram</b><small id="tgTarget">推送到你的 Telegram 机器人私聊</small></span><input type="checkbox" id="sTg"><span class="track" aria-hidden="true"></span></label>
+    <label class="switch-row" for="sTg"><span><b>Telegram</b><small>由你的机器人发给你（私聊或群组都可以）</small></span><input type="checkbox" id="sTg"><span class="track" aria-hidden="true"></span></label>
+    <div class="two">
+      <div class="field"><label for="sTgToken">Bot Token</label><input class="in" id="sTgToken" type="password" autocomplete="new-password" spellcheck="false"></div>
+      <div class="field"><label for="sTgChat">Chat ID</label><div class="with-btn"><input class="in num" id="sTgChat" autocomplete="off" spellcheck="false" placeholder="你的用户 ID"><button type="button" class="mini" id="btnDetect">自动获取</button></div></div>
+    </div>
     <div class="chan" id="chanTg"></div>
+    <div class="chan" id="detectBox" hidden></div>
+    <div class="hint-box">没有机器人？在 Telegram 搜索 <b>@BotFather</b>，发送 <b>/newbot</b> 按提示起名，就会得到 Token。然后打开你的机器人点「开始」，回到这里点「自动获取」就能填好 Chat ID。</div>
     <label class="switch-row" for="sBark"><span><b>Bark</b><small>推送到 iPhone</small></span><input type="checkbox" id="sBark"><span class="track" aria-hidden="true"></span></label>
+    <div class="two">
+      <div class="field"><label for="sBarkBase">服务器地址</label><input class="in" id="sBarkBase" autocomplete="off" spellcheck="false" placeholder="https://api.day.app"></div>
+      <div class="field"><label for="sBarkKey">设备 Key</label><input class="in" id="sBarkKey" type="password" autocomplete="new-password" spellcheck="false"></div>
+    </div>
     <div class="chan" id="chanBark"></div>
+    <div class="hint-box">用官方 Bark 就保持 https://api.day.app；设备 Key 在 Bark App 首页的链接里（api.day.app/<b>这一段</b>/…）。</div>
     <div class="two">
       <div class="field"><label for="sHour">每天检查时间</label><select class="in" id="sHour"></select></div>
       <div class="field"><label for="sLead">手动付款提前</label><div class="unit-in"><input class="in num" id="sLead" type="number" min="0" max="15" step="1"><span>天</span></div></div>
@@ -1314,6 +1331,9 @@ async function openSettings(focus) {
   $('#sHour').value = n.hour; $('#sLead').value = n.lead; $('#sAutoLead').value = n.autoLead; $('#sBigLead').value = n.bigLead;
   $('#sMonthly').checked = n.monthly; $('#sLate').checked = n.late; $('#sTrial').checked = n.trial;
   $('#chanTg').textContent = $('#chanBark').textContent = '检查中…';
+  $('#detectBox').hidden = true;
+  notifyConf = null;
+  for (const id of ['#sTgToken', '#sTgChat', '#sBarkBase', '#sBarkKey']) $(id).value = '';
   $('#notifyPreview').textContent = '加载中…';
   $('#notifyLast').textContent = '';
   setDlg.showModal();
@@ -1322,14 +1342,8 @@ async function openSettings(focus) {
     const r = await fetch('api/notify/status', {cache:'no-store'});
     if (!r.ok) throw new Error(r.status);
     const st = await r.json();
-    const chan = (name, el) => {
-      const conf = st.channels[name], chk = (st.check || {})[name];
-      el.innerHTML = !conf ? '<span class="bad">服务器上还没配置这个渠道</span>'
-        : `服务器已配置 · <b class="${chk === '可用' ? 'ok' : 'bad'}">${esc(chk || '未检查')}</b>`;
-    };
-    chan('telegram', $('#chanTg')); chan('bark', $('#chanBark'));
-    const ck = st.check || {};
-    if (ck.telegramBot) $('#tgTarget').textContent = ck.telegramTarget === '私聊' ? `推送到 ${ck.telegramBot} 私聊（直接发给你）` : `推送到 ${ck.telegramBot} 所在的「${ck.telegramTarget}」`;
+    lastCheck = st.check || {};
+    renderChan(st);
     $('#notifyPreview').textContent = st.preview && st.preview.body
       ? `${st.preview.title}\n\n${st.preview.body}`
       : '今天没有需要提醒的项目（按服务器上已保存的设置计算）。';
@@ -1342,8 +1356,57 @@ async function openSettings(focus) {
     $('#notifyPreview').textContent = '无法获取预览';
   }
 }
-$('#setForm').addEventListener('submit', e => {
+let notifyConf = null, lastCheck = {};
+function renderChan(st) {
+  const c = st.config || {}, tg = c.telegram || {}, bk = c.bark || {}, ck = st.check || {};
+  notifyConf = c;
+  $('#sTgToken').value = '';
+  $('#sTgToken').placeholder = tg.tokenSet ? `已设置 ${tg.tokenTail}${tg.bot ? '（' + tg.bot + '）' : ''}，留空不修改` : '从 @BotFather 获取';
+  $('#sTgChat').value = tg.chat || '';
+  $('#sBarkBase').value = bk.base || '';
+  $('#sBarkKey').value = '';
+  $('#sBarkKey').placeholder = bk.keySet ? `已设置 ${bk.keyTail}，留空不修改` : '在 Bark App 首页复制';
+  $('#chanTg').innerHTML = !tg.tokenSet ? '<span class="bad">还没设置机器人</span>'
+    : !tg.tokenValid ? '<span class="bad">Token 无效，请重新填写</span>'
+    : !tg.chat ? `${esc(tg.bot)} · <span class="bad">还没填 Chat ID</span>`
+    : tg.chatType === '无法访问' ? `${esc(tg.bot)} · <span class="bad">还不能给这个 Chat ID 发消息，先在 Telegram 里给机器人发 /start</span>`
+    : `<b class="ok">可用</b> · ${esc(tg.bot)} → ${tg.chatType}${tg.chatName ? '「' + esc(tg.chatName) + '」' : ''}`;
+  $('#chanBark').innerHTML = !bk.keySet ? '<span class="bad">还没设置 Bark</span>'
+    : ck.bark === '可用' ? `<b class="ok">服务器可连接</b> · Key ${esc(bk.keyTail)}` : `<span class="bad">${esc(ck.bark || '连不上 Bark 服务器')}</span>`;
+}
+// 页面上改过的推送配置；没改返回 null（Token / Key 留空 = 不修改）
+function notifyChanges() {
+  if (!notifyConf) return null;
+  const tg = notifyConf.telegram || {}, bk = notifyConf.bark || {}, out = {};
+  const tok = $('#sTgToken').value.trim(), chat = $('#sTgChat').value.trim();
+  if (tok || chat !== (tg.chat || '')) {
+    if (!tok && !chat) { if (tg.tokenSet) out.telegram = {clear:true}; }
+    else out.telegram = {token:tok, chat};
+  }
+  const base = $('#sBarkBase').value.trim().replace(/\/+$/, ''), key = $('#sBarkKey').value.trim();
+  if (key || base !== (bk.base || '')) {
+    if (!key && !base) { if (bk.keySet) out.bark = {clear:true}; }
+    else out.bark = {base, key};
+  }
+  return Object.keys(out).length ? out : null;
+}
+async function applyNotify() {
+  const ch = notifyChanges();
+  if (!ch) return true;
+  const r = await fetch('api/notify/config', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(ch)});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { toast(j.error || '推送设置保存失败'); return false; }
+  renderChan({config:j.config, check:lastCheck});
+  return true;
+}
+$('#setForm').addEventListener('submit', async e => {
   e.preventDefault();
+  const btn = $('#setForm button[type=submit]');
+  btn.disabled = true;
+  let ok = false;
+  try { ok = await applyNotify(); } catch (_) { toast('连不上服务器，推送设置没保存'); }
+  btn.disabled = false;
+  if (!ok) return;
   state.settings = mergeSettings({
     income: $('#sIncome').value, fxFee: $('#sFee').value,
     notify: {
@@ -1356,15 +1419,36 @@ $('#setForm').addEventListener('submit', e => {
   save(); render();
   toast('设置已保存');
 });
+$('#btnDetect').onclick = async () => {
+  const b = $('#btnDetect'), box = $('#detectBox');
+  b.disabled = true; b.textContent = '获取中…';
+  box.hidden = false;
+  try {
+    const r = await fetch('api/notify/detect', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token:$('#sTgToken').value.trim()})});
+    const j = await r.json();
+    if (j.error) box.innerHTML = `<span class="bad">${esc(j.error)}</span>`;
+    else if (j.chats.length === 1) { $('#sTgChat').value = j.chats[0].id; box.innerHTML = `<b class="ok">已填入</b>：${esc(j.chats[0].name || j.chats[0].id)}（${j.chats[0].type}），记得点「保存」`; }
+    else box.innerHTML = '找到多个聊天，点一个：<br>' + j.chats.map(c => `<button type="button" class="mini" data-chat="${esc(c.id)}">${esc(c.name || c.id)} · ${c.type}</button>`).join('');
+  } catch (_) { box.innerHTML = '<span class="bad">连不上服务器</span>'; }
+  b.disabled = false; b.textContent = '自动获取';
+};
+$('#detectBox').addEventListener('click', e => {
+  const c = e.target.closest('[data-chat]');
+  if (!c) return;
+  $('#sTgChat').value = c.dataset.chat;
+  $('#detectBox').innerHTML = `<b class="ok">已填入</b>：${esc(c.textContent)}，记得点「保存」`;
+});
 $('#btnSetCancel').onclick = () => setDlg.close();
 setDlg.addEventListener('click', e => { if (e.target === setDlg) setDlg.close(); });
 $('#btnTest').onclick = async () => {
   const b = $('#btnTest');
   b.disabled = true; b.textContent = '发送中…';
   try {
-    const r = await fetch('api/notify/test', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({telegram:$('#sTg').checked, bark:$('#sBark').checked})});
-    const j = await r.json();
-    toast(Object.entries(j.result || {}).map(([k, v]) => `${k === 'telegram' ? 'Telegram' : 'Bark'}：${v}`).join('　') || '发送失败');
+    if (await applyNotify()) {
+      const r = await fetch('api/notify/test', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({telegram:$('#sTg').checked, bark:$('#sBark').checked})});
+      const j = await r.json();
+      toast(Object.entries(j.result || {}).map(([k, v]) => `${k === 'telegram' ? 'Telegram' : 'Bark'}：${v}`).join('　') || '发送失败');
+    }
   } catch (_) { toast('发送失败，连不上服务器'); }
   b.disabled = false; b.textContent = '发送测试推送';
 };

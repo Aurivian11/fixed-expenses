@@ -58,6 +58,7 @@ def read_state_safe():
         return None
 
 
+notify.CONFIG_FILE = BASE / "data" / "notify-config.json"
 SCHEDULER = notify.Scheduler(read_state_safe, lambda: get_rates(), BASE / "data" / "notify-state.json")
 
 
@@ -271,6 +272,7 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._json(401, {"error": "请先登录"})
             st = SCHEDULER.status()
             st["check"] = notify.check()
+            st["config"] = notify.public_conf()
             return self._json(200, st)
         if r.startswith("/api/"):
             return self._json(404, {"error": "not found"})
@@ -282,6 +284,13 @@ class Handler(SimpleHTTPRequestHandler):
             return self._login()
         if r == "/api/logout":
             return self._json(200, {"ok": True}, cookie=self._cookie("", 0))
+        if r == "/api/notify/detect":
+            if not self._authed():
+                return self._json(401, {"error": "请先登录"})
+            obj, code = self._read_json()
+            if code != 200 or not isinstance(obj, dict):
+                return self._json(400, {"error": "请求不合法"})
+            return self._json(200, notify.detect_chats(obj.get("token")))
         if r == "/api/notify/test":
             if not self._authed():
                 return self._json(401, {"error": "请先登录"})
@@ -294,6 +303,16 @@ class Handler(SimpleHTTPRequestHandler):
         return self._json(404, {"error": "not found"})
 
     def do_PUT(self):
+        if self._route() == "/api/notify/config":
+            if not self._authed():
+                return self._json(401, {"error": "请先登录"})
+            obj, code = self._read_json()
+            if code != 200:
+                return self._json(code, {"error": "请求不合法"})
+            err = notify.update_conf(obj)
+            if err:
+                return self._json(400, {"error": err})
+            return self._json(200, {"ok": True, "config": notify.public_conf()})
         if self._route() != "/api/data":
             return self._json(404, {"error": "not found"})
         if not self._authed():
