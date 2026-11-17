@@ -1,20 +1,52 @@
+<div align="center">
+
 # 固定支出 · Fixed Expenses
 
-一个记录**每月固定开销**的私人小工具：房租、话费、会员订阅、保险……把每个月雷打不动的钱放在一起，看清它们什么时候扣、一个月一共要花多少。
+**把每个月雷打不动的钱，放进一张会呼吸的玻璃表盘里。**
 
-- 后端只用 Python 标准库（`http.server`），无第三方依赖
-- 前端是单个原生 HTML 文件，浅色玻璃质感界面，适配手机
-- 数据保存在服务器上的 `data/expenses.json`
+自托管的私人固定开销记录工具 —— 房租、话费、会员订阅、保险……<br>
+看清每一笔什么时候扣、这个月还要付多少、未来一年哪个月最重，并在扣款前提醒你。
 
-<p align="center">
-  <img src="docs/screenshot.jpg" alt="固定支出 · 桌面端首页" width="74%">
-  &nbsp;
-  <img src="docs/screenshot-mobile.jpg" alt="固定支出 · 手机端首页" width="22%">
-</p>
+![Python](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python&logoColor=white)
+![Dependencies](https://img.shields.io/badge/dependencies-none-2f9a72)
+![Frontend](https://img.shields.io/badge/frontend-single%20HTML%20file-7b6cf6)
+![Notify](https://img.shields.io/badge/notify-Telegram%20%C2%B7%20Bark-26A5E4?logo=telegram&logoColor=white)
+![Self-hosted](https://img.shields.io/badge/self--hosted-yes-f08aa5)
 
-<p align="center"><sub>截图为演示数据</sub></p>
+<img src="docs/home.jpg" alt="固定支出 · 桌面端首页" width="100%">
 
-## 功能
+<sub>截图均为演示数据</sub>
+
+</div>
+
+## 为什么做这个
+
+固定支出是最容易被忽略的一笔钱：每一笔都不大，大多自动扣款，又分散在不同的银行卡、支付宝和 App Store 里。等哪天回头一算，一年早已是好几万。
+
+「固定支出」把它们收拢到一个地方，用一张**月度轨道**告诉你这个月的钱会在哪几天离开、哪些已经付了；用**现金流时间线**提前看到未来一年里年费、保险集中扣款的「大月」；再用 **Telegram / Bark** 在扣款前提醒你——尤其是那些「忘了取消就会自动续费」的订阅。
+
+## 亮点
+
+- 🌀 **月度轨道** —— 把一个月画成表盘，指针是此刻，每笔扣款按日期落在轨道上：待付、自动扣、已付、过期一目了然
+- 📈 **现金流时间线** —— 过去的实付记录 + 未来 12 个月预测，自动标出最重的月份和月均线
+- 🔔 **扣款提醒** —— 每天定时检查，Telegram / Bark 推送；自动续费前提醒你「不需要记得取消」，每月 1 号发本月汇总；机器人和 Bark 直接在页面里设置
+- 💱 **多币种** —— 12 种货币按实时汇率折算人民币，可加信用卡外币手续费
+- 🧾 **真实的生活场景** —— 月付 / 季付 / 年付、免费试用期、合约到期、临时暂停、涨价记录，都会正确计入每个月
+- 💰 **收入占比与试算** —— 固定支出吃掉了收入的几成？砍掉某几项一年能省多少？
+- 🔒 **私有、轻量** —— 自己的服务器、密码登录、多设备不互相覆盖、每日自动快照；后端只用 Python 标准库，前端是一个 HTML 文件
+
+## 截图
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/timeline.jpg" alt="现金流时间线"><br><sub><b>现金流时间线</b>：点柱子查看当月明细，过去的月份可补标已付</sub></td>
+    <td width="50%"><img src="docs/cards.jpg" alt="支出卡片"><br><sub><b>支出卡片</b>：自动扣款、试用期、到期、涨价、暂停一眼可见</sub></td>
+  </tr>
+</table>
+
+<p align="center"><img src="docs/home-mobile.jpg" alt="手机端首页" width="300"><br><sub><b>手机端</b>：同样的玻璃界面，随时随地查看和标记</sub></p>
+
+## 功能一览
 
 | 功能 | 说明 |
 |---|---|
