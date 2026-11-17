@@ -1370,7 +1370,7 @@ function renderChan(st) {
     : !tg.tokenValid ? '<span class="bad">Token 无效，请重新填写</span>'
     : !tg.chat ? `${esc(tg.bot)} · <span class="bad">还没填 Chat ID</span>`
     : tg.chatType === '无法访问' ? `${esc(tg.bot)} · <span class="bad">还不能给这个 Chat ID 发消息，先在 Telegram 里给机器人发 /start</span>`
-    : `<b class="ok">可用</b> · ${esc(tg.bot)} → ${tg.chatType}${tg.chatName ? '「' + esc(tg.chatName) + '」' : ''}`;
+    : `当前生效：<b class="ok">可用</b> · ${esc(tg.bot)} → ${tg.chatType}${tg.chatName ? '「' + esc(tg.chatName) + '」' : ''}`;
   $('#chanBark').innerHTML = !bk.keySet ? '<span class="bad">还没设置 Bark</span>'
     : ck.bark === '可用' ? `<b class="ok">服务器可连接</b> · Key ${esc(bk.keyTail)}` : `<span class="bad">${esc(ck.bark || '连不上 Bark 服务器')}</span>`;
 }
@@ -1427,7 +1427,12 @@ $('#btnDetect').onclick = async () => {
     const r = await fetch('api/notify/detect', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token:$('#sTgToken').value.trim()})});
     const j = await r.json();
     if (j.error) box.innerHTML = `<span class="bad">${esc(j.error)}</span>`;
-    else if (j.chats.length === 1) { $('#sTgChat').value = j.chats[0].id; box.innerHTML = `<b class="ok">已填入</b>：${esc(j.chats[0].name || j.chats[0].id)}（${j.chats[0].type}），记得点「保存」`; }
+    else if (j.chats.length === 1) {
+      const same = $('#sTgChat').value.trim() === j.chats[0].id;
+      $('#sTgChat').value = j.chats[0].id;
+      box.innerHTML = `<b class="ok">已获取</b>：${esc(j.chats[0].name || j.chats[0].id)}（${j.chats[0].type}）${j.typed && j.bot ? ` · 将改用 <b>${esc(j.bot)}</b>` : ''}，<b>点下面的「保存」后生效</b>`
+        + (same ? '<br>（Chat ID 就是你的 Telegram 用户 ID，换机器人也是同一个数字，所以没变是正常的）' : '');
+    }
     else box.innerHTML = '找到多个聊天，点一个：<br>' + j.chats.map(c => `<button type="button" class="mini" data-chat="${esc(c.id)}">${esc(c.name || c.id)} · ${c.type}</button>`).join('');
   } catch (_) { box.innerHTML = '<span class="bad">连不上服务器</span>'; }
   b.disabled = false; b.textContent = '自动获取';

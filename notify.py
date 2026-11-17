@@ -397,9 +397,11 @@ def detect_chats(token=None):
             if ch.get("id"):
                 name = " ".join(x for x in (ch.get("first_name"), ch.get("last_name")) if x) or ch.get("title") or ch.get("username") or ""
                 chats[str(ch["id"])] = {"id": str(ch["id"]), "type": "私聊" if ch.get("type") == "private" else "群组", "name": name}
+    me = _tg(token, "getMe")
+    bot = "@" + str((me.get("result") or {}).get("username", "")) if me.get("ok") else ""
     if not chats:
-        return {"error": "还没收到消息：请先在 Telegram 里给你的机器人发一条消息（比如 /start），再点一次"}
-    return {"chats": list(chats.values())[::-1]}
+        return {"error": f"{bot or '机器人'} 还没收到消息：请先在 Telegram 里给它发一条消息（比如 /start），再点一次"}
+    return {"chats": list(chats.values())[::-1], "bot": bot, "typed": bool(typed)}
 
 
 # ---------- 定时任务 ----------
