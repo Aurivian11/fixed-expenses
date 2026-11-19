@@ -291,6 +291,11 @@ input[type=date].in{padding:0 10px}
 .hint-box{font-size:12px;color:var(--ink3);margin:0 4px 14px;line-height:1.7}
 .hint-box b{color:var(--ink2);font-weight:600}
 #detectBox .mini{margin:4px 6px 0 0}
+.rrow{display:grid;grid-template-columns:12px minmax(0,1fr) auto 52px;align-items:center;gap:10px;padding:8px 12px;border-radius:14px;background:rgba(255,255,255,.5);font-size:13px}
+.rrow .mname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rrow .pct{color:var(--ink3);text-align:right;font-size:12px}
+.rep-total{font-size:36px;font-weight:700;line-height:1.1}
+.rep-sub{font-size:13px;color:var(--ink2);margin:4px 0 12px}
 .preview{white-space:pre-wrap;font-size:12px;line-height:1.6;color:var(--ink2);padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.55);max-height:220px;overflow:auto}
 .dfoot{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;align-items:center;flex-wrap:wrap}
 .dfoot .del{margin-right:auto;color:var(--bad)}
@@ -394,7 +399,7 @@ body.locked .wrap,body.locked .simbar{visibility:hidden}
 
   <section class="section glass panel" id="tlSection">
     <div class="ptitle">
-      <h2>现金流时间线</h2>
+      <h2>现金流时间线 <button type="button" class="link-btn" id="btnReport" style="font-size:13px;margin-left:4px">年度报告 →</button></h2>
       <span>已过去的月份 · 本月 · 未来 12 个月预测　点柱子看明细</span>
     </div>
     <div class="legend" style="margin-top:6px">
@@ -504,9 +509,10 @@ body.locked .wrap,body.locked .simbar{visibility:hidden}
 <dialog id="setDlg">
   <form class="glass sheet" id="setForm" method="dialog" autocomplete="off">
     <h2>设置</h2>
-    <h4>收入与汇率</h4>
-    <div class="two">
-      <div class="field"><label for="sIncome">每月收入（人民币，可选）</label><div class="unit-in"><input class="in num" id="sIncome" type="number" inputmode="decimal" min="0" step="1" placeholder="0"><span>元</span></div><div class="hint">用来算固定支出占收入的比例</div></div>
+    <h4>收入、预算与汇率</h4>
+    <div class="three">
+      <div class="field"><label for="sIncome">每月收入（可选）</label><div class="unit-in"><input class="in num" id="sIncome" type="number" inputmode="decimal" min="0" step="1" placeholder="0"><span>元</span></div><div class="hint">算固定支出占收入几成</div></div>
+      <div class="field"><label for="sBudget">每月预算（可选）</label><div class="unit-in"><input class="in num" id="sBudget" type="number" inputmode="decimal" min="0" step="1" placeholder="0"><span>元</span></div><div class="hint">月均超出时提醒你</div></div>
       <div class="field"><label for="sFee">外币手续费</label><div class="unit-in"><input class="in num" id="sFee" type="number" inputmode="decimal" min="0" max="10" step="0.1" placeholder="0"><span>%</span></div><div class="hint">信用卡刷外币通常 1%～1.5%</div></div>
     </div>
     <h4>扣款提醒</h4>
@@ -536,15 +542,29 @@ body.locked .wrap,body.locked .simbar{visibility:hidden}
     <label class="switch-row" for="sMonthly"><span><b>每月 1 号发本月汇总</b><small>这个月一共几笔、合计多少</small></span><input type="checkbox" id="sMonthly"><span class="track" aria-hidden="true"></span></label>
     <label class="switch-row" for="sLate"><span><b>过了扣款日还没付时提醒</b><small>手动付款的项目，过期后 3 天内提醒一次</small></span><input type="checkbox" id="sLate"><span class="track" aria-hidden="true"></span></label>
     <label class="switch-row" for="sTrial"><span><b>试用结束 / 到期提醒</b><small>试用结束前 3 天、到期前 7 天</small></span><input type="checkbox" id="sTrial"><span class="track" aria-hidden="true"></span></label>
+    <label class="switch-row" for="sBudgetN"><span><b>超出预算时提醒</b><small>新增或涨价导致月均超出预算时，推送一次</small></span><input type="checkbox" id="sBudgetN"><span class="track" aria-hidden="true"></span></label>
+    <label class="switch-row" for="sAnnual"><span><b>每年 1 月发年度报告</b><small>去年一共花了多少、钱花在哪、哪些涨价了、和前年比怎么样</small></span><input type="checkbox" id="sAnnual"><span class="track" aria-hidden="true"></span></label>
+    <div class="hint-box">Telegram 提醒下面会带「✅ 已付」按钮，点一下就记为已付；给机器人发 <b>/month</b> 可以查看本月情况。</div>
     <h4>今天的提醒预览</h4>
     <div class="preview" id="notifyPreview">加载中…</div>
     <div class="chan" id="notifyLast" style="margin-top:8px"></div>
+    <h4>安全</h4>
+    <div class="switch-row" style="cursor:default"><span><b>退出其他所有设备</b><small>手机丢了、或在别人电脑上登录过时用；这台设备保持登录</small></span><button type="button" class="btn" id="btnLogoutAll" style="height:36px;flex:none">退出其他设备</button></div>
     <div class="dfoot">
       <button type="button" class="btn" id="btnTest" style="margin-right:auto">发送测试推送</button>
       <button type="button" class="btn" id="btnSetCancel">取消</button>
       <button type="submit" class="btn btn-primary"><span class="lbl">保存</span></button>
     </div>
   </form>
+</dialog>
+
+<!-- 年度报告 -->
+<dialog id="repDlg">
+  <div class="glass sheet">
+    <div class="ptitle" style="margin-bottom:14px;align-items:center"><h2 style="margin:0;font-size:19px">年度报告</h2><select class="in" id="repYear" style="width:auto;height:38px;font-size:14px"></select></div>
+    <div id="repBody"></div>
+    <div class="dfoot"><button type="button" class="btn" id="btnRepClose">关闭</button></div>
+  </div>
 </dialog>
 
 <script>
@@ -575,7 +595,7 @@ const curOf = k => CURS.find(c => c.k === k) || CURS[0];
 const validCur = k => CURS.some(c => c.k === k);
 // 兜底汇率（1 单位外币 ≈ 多少人民币）：只在服务器拿不到实时汇率时使用
 const FALLBACK_RATES = {CNY:1, USD:7.1, EUR:8.2, HKD:0.91, GBP:9.3, JPY:0.047, SGD:5.4, AUD:4.6, CAD:5.1, KRW:0.0051, TWD:0.22, CHF:8.8};
-const DEFAULT_NOTIFY = {telegram:true, bark:true, hour:9, lead:1, autoLead:3, bigLead:7, monthly:true, late:true, trial:true};
+const DEFAULT_NOTIFY = {telegram:true, bark:true, hour:9, lead:1, autoLead:3, bigLead:7, monthly:true, late:true, trial:true, budget:true, annual:true};
 const LS_KEY = 'guding-zhichu-backup';
 
 /* ================= 工具 ================= */
@@ -607,10 +627,10 @@ const keyLabel = key => { const [y, m] = parseKey(key); return `${y}年${m + 1}�
 const emptyState = () => ({version:2, sample:false, since:ymKey(new Date()), items:[], paid:{}, unpaid:{}, settings:mergeSettings(null)});
 let state = emptyState();
 const ui = {filter:null, sort:'date', sim:new Set(), editing:null, bd:'cat', month:null};
-let fx = {rates:{...FALLBACK_RATES}, updated:null, source:'fallback', stale:false};
+let fx = {rates:{...FALLBACK_RATES}, updated:null, source:'fallback', stale:false, hist:[]};
 
 function mergeSettings(s) {
-  const n = (s && s.notify) || {}, out = {income: clampNum(s && s.income, 0, 1e9, 0), fxFee: clampNum(s && s.fxFee, 0, 10, 0), notify:{}};
+  const n = (s && s.notify) || {}, out = {income: clampNum(s && s.income, 0, 1e9, 0), budget: clampNum(s && s.budget, 0, 1e9, 0), fxFee: clampNum(s && s.fxFee, 0, 10, 0), notify:{}};
   for (const [k, v] of Object.entries(DEFAULT_NOTIFY)) {
     out.notify[k] = typeof v === 'boolean' ? (n[k] === undefined ? v : !!n[k])
       : clampInt(n[k], 0, k === 'hour' ? 23 : k === 'bigLead' ? 60 : 15, v);
@@ -633,7 +653,24 @@ function priceAt(it, key) {
   for (const p of ps) if (p.from <= key) best = p;
   return best;
 }
-const cnyAt = (it, key) => { const p = priceAt(it, key); return toCny(p.amount, p.currency); };
+// 某天（或之前最近一天）的汇率；没有历史记录时用当前汇率
+function rateOn(k, day) {
+  if (!k || k === 'CNY') return 1;
+  const h = fx.hist;
+  if (day && h.length) {
+    let lo = 0, hi = h.length - 1, idx = 0;
+    while (lo <= hi) { const mid = (lo + hi) >> 1; if (h[mid][0] <= day) { idx = mid; lo = mid + 1; } else hi = mid - 1; }
+    const r = Number(h[idx][1][k]);
+    if (r > 0) return r;
+  }
+  return rateOf(k);
+}
+const toCnyOn = (amount, k, day) => amount * rateOn(k, day) * feeOf(k);
+// 某月这一笔折合人民币：已经扣过的按扣款当天汇率，还没扣的按当前汇率
+const cnyAt = (it, key) => {
+  const p = priceAt(it, key), [y, m] = parseKey(key), occ = occurrence(it, y, m);
+  return toCnyOn(p.amount, p.currency, occ && occ <= sod(new Date()) ? isoDate(occ) : null);
+};
 
 /* ================= 扣款规则（与 notify.py 一致） ================= */
 function dueIn(it, y, m) {
@@ -855,7 +892,8 @@ async function loadRates() {
     const rates = {...FALLBACK_RATES};
     for (const c of CURS) { const v = Number(j.rates[c.k]); if (v > 0) rates[c.k] = v; }
     rates.CNY = 1;
-    fx = {rates, updated:j.updated || null, source:j.source || 'live', stale:!!j.stale};
+    const hist = Object.entries(j.history || {}).filter(([d, v]) => isDate(d) && v && typeof v === 'object').sort((a, b) => a[0] < b[0] ? -1 : 1);
+    fx = {rates, updated:j.updated || null, source:j.source || 'live', stale:!!j.stale, hist};
     render();
   } catch (_) {}
 }
@@ -965,20 +1003,37 @@ function tick() {
   $('#ticker').textContent = money(tickerAvg * (t - s) / (e - s), 2);
 }
 function renderIncome(avg) {
-  const inc = Number(S().income) || 0, el = $('#incomeCard');
-  if (!inc) {
-    el.innerHTML = `<div class="k"><span>占收入比例</span></div>
-      <p style="font-size:13px;color:var(--ink2);margin:8px 0 10px">填上每月收入，看看固定支出吃掉了几成、每月还剩多少可以自由支配。</p>
-      <button class="btn" data-open-settings="income" style="height:36px">设置月收入</button>`;
+  const inc = Number(S().income) || 0, bud = Number(S().budget) || 0, el = $('#incomeCard');
+  if (!inc && !bud) {
+    el.innerHTML = `<div class="k"><span>预算与收入</span></div>
+      <p style="font-size:13px;color:var(--ink2);margin:8px 0 10px">设一个每月预算，超出时提醒你；填上收入，看看固定支出吃掉了几成。</p>
+      <button class="btn" data-open-settings="income" style="height:36px">去设置</button>`;
     return;
   }
-  const pct = avg / inc * 100, free = inc - avg;
-  const level = pct < 30 ? '' : pct < 50 ? ' warn' : ' bad';
-  const word = pct < 30 ? '很健康' : pct < 50 ? '偏高，留意一下' : '太高了，可以考虑砍掉一些';
-  el.innerHTML = `<div class="k"><span>占收入比例</span><span class="num">月收入 ${money0(inc)}</span></div>
-    <div class="v num">${pct.toFixed(0)}%<small>${word}</small></div>
-    <div class="tube${level}"><i style="width:${Math.min(100, pct).toFixed(1)}%"></i></div>
-    <div class="foot"><span>每月可自由支配</span><span class="num" style="font-weight:600;color:${free < 0 ? 'var(--bad)' : 'var(--ok)'}">${money0(free)}</span></div>`;
+  let html = `<div class="k"><span>${bud ? '每月预算' : '占收入比例'}</span>${inc ? `<span class="num">月收入 ${money0(inc)}</span>` : ''}</div>`;
+  if (bud) {
+    const pct = avg / bud * 100, over = avg - bud;
+    html += `<div class="v num">${money0(avg)}<small>/ 预算 ${money0(bud)}</small></div>
+      <div class="tube${pct > 100 ? ' bad' : pct > 90 ? ' warn' : ''}"><i style="width:${Math.min(100, pct).toFixed(1)}%"></i></div>
+      <div class="foot"><span>${over > 0 ? '⚠️ 超出预算' : '预算还剩'}</span><span class="num" style="font-weight:600;color:${over > 0 ? 'var(--bad)' : 'var(--ok)'}">${money0(Math.abs(over))}</span></div>`;
+  }
+  if (inc) {
+    const pct = avg / inc * 100, free = inc - avg;
+    const word = pct < 30 ? '很健康' : pct < 50 ? '偏高，留意一下' : '太高了，可以考虑砍掉一些';
+    if (bud) {
+      html += `<div class="foot" style="margin-top:8px"><span>占收入 <b class="num">${pct.toFixed(0)}%</b></span><span>可自由支配 <b class="num" style="color:${free < 0 ? 'var(--bad)' : 'var(--ok)'}">${money0(free)}</b></span></div>`;
+    } else {
+      html += `<div class="v num">${pct.toFixed(0)}%<small>${word}</small></div>
+        <div class="tube${pct < 30 ? '' : pct < 50 ? ' warn' : ' bad'}"><i style="width:${Math.min(100, pct).toFixed(1)}%"></i></div>
+        <div class="foot"><span>每月可自由支配</span><span class="num" style="font-weight:600;color:${free < 0 ? 'var(--bad)' : 'var(--ok)'}">${money0(free)}</span></div>`;
+    }
+  }
+  el.innerHTML = html;
+}
+const activeAvg = () => sum(state.items.filter(i => isActive(i, new Date())), monthlyOf);
+function budgetWarn(before, after) {
+  const bud = Number(S().budget) || 0;
+  if (bud && after > bud && after > before + 0.5) toast(`⚠️ 超出预算：每月固定约 ${money0(after)}，预算 ${money0(bud)}（多 ${money0(after - bud)}）`, 5000);
 }
 
 /* ================= 渲染：现金流时间线 ================= */
@@ -1058,7 +1113,7 @@ function renderMonthDetail(t, d) {
   const head = `<div class="mhead"><b>${keyLabel(d.k)}${d.k === cur ? '（本月）' : ''}</b><span class="num">共 ${d.list.length} 笔 · ${money0(d.total)}${isFuture ? '（预测）' : ` · 已付 ${money0(d.paid)}`}</span></div>`;
   if (!d.list.length) { $('#mDetail').innerHTML = head + `<div class="mempty">这个月没有扣款</div>`; return; }
   const rows = d.list.map(({it, occ}) => {
-    const c = catOf(it.category), p = priceAt(it, d.k), cny = toCny(p.amount, p.currency);
+    const c = catOf(it.category), p = priceAt(it, d.k), cny = cnyAt(it, d.k);
     let st, btn = '';
     if (isFuture) st = `<span class="st st-plan">${it.auto ? '将自动扣' : '预计'}</span>`;
     else {
@@ -1193,13 +1248,13 @@ function render() {
 
 /* ================= 交互 ================= */
 let toastTimer;
-function toast(msg) {
+function toast(msg, ms = 2000) {
   const el = $('#toast'), host = document.querySelector('dialog[open]') || document.body;
   if (el.parentNode !== host) host.appendChild(el);   // 打开的弹窗在最顶层，提示条要放进去才看得见
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+  toastTimer = setTimeout(() => el.classList.remove('show'), ms);
 }
 function togglePaid(it, key) {
   const paidArr = state.paid[key] ||= [], unArr = state.unpaid[key] ||= [];
@@ -1275,6 +1330,7 @@ function setPause(it, on) {
 }
 $('#form').addEventListener('submit', e => {
   e.preventDefault();
+  const before = activeAvg();
   const name = $('#fName').value.trim(), amount = round2(parseFloat($('#fAmount').value));
   if (!name) return $('#fName').focus();
   if (!(amount > 0)) return $('#fAmount').focus();
@@ -1316,6 +1372,7 @@ $('#form').addEventListener('submit', e => {
     } else toast(ui.editing ? '原记录已不存在，已作为新支出保存' : '已添加 ' + name);
   }
   setPause(it, $('#fPause').checked);
+  budgetWarn(before, activeAvg());
   dlg.close();
   fillMethodList();
   save(); render();
@@ -1339,10 +1396,12 @@ $('#sHour').innerHTML = Array.from({length:24}, (_, h) => `<option value="${h}">
 async function openSettings(focus) {
   const s = S(), n = s.notify;
   $('#sIncome').value = s.income || '';
+  $('#sBudget').value = s.budget || '';
   $('#sFee').value = s.fxFee || '';
   $('#sTg').checked = n.telegram; $('#sBark').checked = n.bark;
   $('#sHour').value = n.hour; $('#sLead').value = n.lead; $('#sAutoLead').value = n.autoLead; $('#sBigLead').value = n.bigLead;
   $('#sMonthly').checked = n.monthly; $('#sLate').checked = n.late; $('#sTrial').checked = n.trial;
+  $('#sBudgetN').checked = n.budget; $('#sAnnual').checked = n.annual;
   $('#chanTg').textContent = $('#chanBark').textContent = '检查中…';
   $('#detectBox').hidden = true;
   notifyConf = null;
@@ -1427,16 +1486,18 @@ $('#setForm').addEventListener('submit', async e => {
   btn.disabled = false;
   if (!ok) return;
   state.settings = mergeSettings({
-    income: $('#sIncome').value, fxFee: $('#sFee').value,
+    income: $('#sIncome').value, budget: $('#sBudget').value, fxFee: $('#sFee').value,
     notify: {
       telegram: $('#sTg').checked, bark: $('#sBark').checked, hour: $('#sHour').value,
       lead: $('#sLead').value, autoLead: $('#sAutoLead').value, bigLead: $('#sBigLead').value,
       monthly: $('#sMonthly').checked, late: $('#sLate').checked, trial: $('#sTrial').checked,
+      budget: $('#sBudgetN').checked, annual: $('#sAnnual').checked,
     },
   });
   setDlg.close();
   save(); render();
-  toast('设置已保存');
+  const avgNow = activeAvg(), bud = Number(S().budget) || 0;
+  toast(bud && avgNow > bud ? `设置已保存 · 当前每月固定约 ${money0(avgNow)}，超出预算 ${money0(avgNow - bud)}` : '设置已保存', bud && avgNow > bud ? 4500 : 2000);
 });
 $('#btnDetect').onclick = async () => {
   const b = $('#btnDetect'), box = $('#detectBox');
@@ -1477,7 +1538,64 @@ $('#btnTest').onclick = async () => {
   b.disabled = false; b.textContent = '发送测试推送';
 };
 
-for (const d of [dlg, setDlg]) d.addEventListener('close', () => { const el = $('#toast'); if (el.parentNode !== document.body) document.body.appendChild(el); });
+/* ----- 年度报告 ----- */
+const repDlg = $('#repDlg');
+async function openReport() {
+  const now = new Date(), first = Number((state.since || ymKey(now)).slice(0, 4));
+  const years = [];
+  for (let y = now.getFullYear(); y >= first; y--) years.push(y);
+  $('#repYear').innerHTML = years.map(y => `<option value="${y}">${y} 年${y === now.getFullYear() ? '（截至今天）' : ''}</option>`).join('');
+  repDlg.showModal();
+  await loadReport(years[0]);
+}
+async function loadReport(y) {
+  $('#repBody').innerHTML = '<div class="mempty">加载中…</div>';
+  try {
+    const r = await fetch('api/report?year=' + encodeURIComponent(y), {cache:'no-store'});
+    if (!r.ok) throw new Error(r.status);
+    renderReport(await r.json());
+  } catch (_) { $('#repBody').innerHTML = '<div class="mempty">加载失败，请稍后再试</div>'; }
+}
+function renderReport(rp) {
+  if (!rp.count) { $('#repBody').innerHTML = `<div class="mempty">${rp.year} 年还没有扣款记录</div>`; return; }
+  const span = rp.months === 12 ? '全年' : `${+rp.first.slice(5)}–${+rp.last.slice(5)} 月，共 ${rp.months} 个月`;
+  const pills = [`<span class="rate">平均每月 <b class="num">${money0(rp.avg)}</b></span>`];
+  if (rp.incomePct) pills.push(`<span class="rate">约占收入 <b class="num">${rp.incomePct.toFixed(0)}%</b></span>`);
+  if (rp.prev) {
+    if (rp.prev.months === rp.months) {
+      const d = rp.total - rp.prev.total, pct = rp.prev.total ? d / rp.prev.total * 100 : 0;
+      pills.push(`<span class="rate">比 ${rp.prev.year} 年 <b class="num" style="color:${d > 0 ? 'var(--bad)' : 'var(--ok)'}">${d >= 0 ? '+' : '−'}${money0(Math.abs(d))}（${pct >= 0 ? '+' : ''}${pct.toFixed(0)}%）</b></span>`);
+    } else if (rp.prev.months) {
+      const d = rp.avg - rp.prev.total / rp.prev.months;
+      pills.push(`<span class="rate">月均比 ${rp.prev.year} 年 <b class="num" style="color:${d > 0 ? 'var(--bad)' : 'var(--ok)'}">${d >= 0 ? '+' : '−'}${money0(Math.abs(d))}</b></span>`);
+    }
+  }
+  const cats = rp.categories.map(c => `<div class="rrow"><i class="dot" style="--c:${catOf(c.name).c}"></i><span class="mname">${esc(c.name)}</span><b class="num">${money0(c.value)}</b><span class="pct num">${c.pct.toFixed(0)}%</span></div>`).join('');
+  const top = rp.top.map((t, i) => `<div class="rrow"><span class="num" style="color:var(--ink3)">${i + 1}</span><span class="mname">${esc(t.name)}</span><b class="num">${money0(t.value)}</b><span class="pct num">${rp.total ? (t.value / rp.total * 100).toFixed(0) : 0}%</span></div>`).join('');
+  const chg = rp.changes.map(c => `<div class="rrow" style="grid-template-columns:minmax(0,1fr) auto"><span class="mname">${esc(c.name)}：${esc(c.from)} → ${esc(c.to)} <span style="color:var(--ink3)">（${c.month} 月起）</span></span><span class="pill ${c.diff > 0 ? 'p-up' : 'p-down'}">每${c.unit} ${c.diff >= 0 ? '+' : '−'}${money0(Math.abs(c.diff))}</span></div>`).join('');
+  $('#repBody').innerHTML = `
+    <div class="rep-total num">${money0(rp.total)}</div>
+    <div class="rep-sub">${rp.year} 年 · ${span} · 共 ${rp.count} 笔已扣款</div>
+    <div class="rates">${pills.join('')}</div>
+    <h4>钱花在哪</h4><div class="mlist">${cats}</div>
+    <h4>单项最多</h4><div class="mlist">${top}</div>
+    <h4>价格变化</h4>${chg ? `<div class="mlist">${chg}</div>` : '<div class="mempty">这一年没有项目涨价 👍</div>'}
+    <div class="hint-box" style="margin-top:12px">${rp.ongoing ? '今年还没过完，只统计到今天为止已经扣款的部分。' : ''}外币按每笔扣款当天的汇率折算；已删除的项目不计入。</div>`;
+}
+$('#btnReport').onclick = openReport;
+$('#repYear').onchange = e => loadReport(e.target.value);
+$('#btnRepClose').onclick = () => repDlg.close();
+repDlg.addEventListener('click', e => { if (e.target === repDlg) repDlg.close(); });
+
+$('#btnLogoutAll').onclick = async () => {
+  if (!confirm('让其他所有设备上的登录立即失效？\n这台设备会保持登录。')) return;
+  try {
+    const r = await fetch('api/logout-all', {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
+    toast(r.ok ? '其他设备已全部退出 ✓' : '操作失败，请稍后再试');
+  } catch (_) { toast('连不上服务器'); }
+};
+
+for (const d of [dlg, setDlg, repDlg]) d.addEventListener('close', () => { const el = $('#toast'); if (el.parentNode !== document.body) document.body.appendChild(el); });
 
 /* ----- 其他 ----- */
 $('#btnAdd').onclick = () => openEditor(null);
@@ -1581,8 +1699,21 @@ let lastMin = -1;
 setInterval(() => {
   tick();
   const t = new Date();
-  if (t.getMinutes() !== lastMin) { lastMin = t.getMinutes(); if (!dlg.open && !setDlg.open) render(); }
+  if (t.getMinutes() !== lastMin) { lastMin = t.getMinutes(); if (!dlg.open && !setDlg.open && !repDlg.open) render(); }
+  if (t - lastRevCheck > 20000) { lastRevCheck = +t; checkRev(); }
 }, 100);
+
+// 每 20 秒看一眼服务器上的数据版本：在别的设备或 Telegram 里点了「已付」，这里也会跟着更新
+let lastRevCheck = Date.now();
+async function checkRev() {
+  if (document.visibilityState !== 'visible' || dirty || saving || dlg.open || setDlg.open || repDlg.open || document.body.classList.contains('locked')) return;
+  try {
+    const r = await fetch('api/rev', {cache:'no-store'});
+    if (!r.ok) return;
+    const j = await r.json();
+    if (Number(j.rev) !== serverRev && !dirty && !saving) { await load(); toast('已同步其他地方（比如 Telegram）的改动'); }
+  } catch (_) {}
+}
 
 window.addEventListener('pagehide', () => {
   if (!dirty || saving) return;
@@ -1590,7 +1721,7 @@ window.addEventListener('pagehide', () => {
 });
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') { if (dirty && !saving) flush(); return; }
-  if (!dirty && !saving && !dlg.open && !setDlg.open && !document.body.classList.contains('locked')) load();
+  if (!dirty && !saving && !dlg.open && !setDlg.open && !repDlg.open && !document.body.classList.contains('locked')) load();
 });
 
 /* ----- 登录 ----- */
