@@ -282,6 +282,9 @@ input[type=date].in{padding:0 10px}
 .chan{font-size:12px;color:var(--ink3);margin:-2px 0 10px 4px}
 .chan b{font-weight:600}
 .chan .ok{color:var(--ok)} .chan .bad{color:var(--bad)}
+.secret{-webkit-text-security:disc}
+.secret:placeholder-shown{-webkit-text-security:none}
+.in:disabled,.mini:disabled{opacity:.55;cursor:wait}
 .with-btn{display:flex;gap:8px}
 .with-btn .in{flex:1;min-width:0}
 .with-btn .mini{height:44px;flex:none;border-radius:14px;padding:0 12px}
@@ -509,7 +512,7 @@ body.locked .wrap,body.locked .simbar{visibility:hidden}
     <h4>扣款提醒</h4>
     <label class="switch-row" for="sTg"><span><b>Telegram</b><small>由你的机器人发给你（私聊或群组都可以）</small></span><input type="checkbox" id="sTg"><span class="track" aria-hidden="true"></span></label>
     <div class="two">
-      <div class="field"><label for="sTgToken">Bot Token</label><input class="in" id="sTgToken" type="password" autocomplete="new-password" spellcheck="false"></div>
+      <div class="field"><label for="sTgToken">Bot Token</label><input class="in secret" id="sTgToken" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" data-1p-ignore data-lpignore="true" data-bwignore="true" data-form-type="other"></div>
       <div class="field"><label for="sTgChat">Chat ID</label><div class="with-btn"><input class="in num" id="sTgChat" autocomplete="off" spellcheck="false" placeholder="你的用户 ID"><button type="button" class="mini" id="btnDetect">自动获取</button></div></div>
     </div>
     <div class="chan" id="chanTg"></div>
@@ -518,7 +521,7 @@ body.locked .wrap,body.locked .simbar{visibility:hidden}
     <label class="switch-row" for="sBark"><span><b>Bark</b><small>推送到 iPhone</small></span><input type="checkbox" id="sBark"><span class="track" aria-hidden="true"></span></label>
     <div class="two">
       <div class="field"><label for="sBarkBase">服务器地址</label><input class="in" id="sBarkBase" autocomplete="off" spellcheck="false" placeholder="https://api.day.app"></div>
-      <div class="field"><label for="sBarkKey">设备 Key</label><input class="in" id="sBarkKey" type="password" autocomplete="new-password" spellcheck="false"></div>
+      <div class="field"><label for="sBarkKey">设备 Key</label><input class="in secret" id="sBarkKey" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" data-1p-ignore data-lpignore="true" data-bwignore="true" data-form-type="other"></div>
     </div>
     <div class="chan" id="chanBark"></div>
     <div class="hint-box">用官方 Bark 就保持 https://api.day.app；设备 Key 在 Bark App 首页的链接里（api.day.app/<b>这一段</b>/…）。</div>
@@ -1038,6 +1041,10 @@ function renderTimeline(t, pool, avg) {
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.style.minWidth = Math.max(560, months.length * 40) + 'px';
   svg.innerHTML = out.join('');
+  if (!ui.tlScrolled) {
+    ui.tlScrolled = true;
+    requestAnimationFrame(() => { const w = $('.tl-wrap'); if (w.scrollWidth > w.clientWidth) w.scrollLeft = Math.max(0, w.scrollWidth * ci / months.length - 60); });
+  }
 
   const futTotal = sum(fut, d => d.total);
   $('#tlSum').innerHTML = `<span class="rate">未来 12 个月预计 <b class="num">${money0(futTotal)}</b></span>`
@@ -1187,7 +1194,8 @@ function render() {
 /* ================= 交互 ================= */
 let toastTimer;
 function toast(msg) {
-  const el = $('#toast');
+  const el = $('#toast'), host = document.querySelector('dialog[open]') || document.body;
+  if (el.parentNode !== host) host.appendChild(el);   // 打开的弹窗在最顶层，提示条要放进去才看得见
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(toastTimer);
@@ -1300,7 +1308,12 @@ $('#form').addEventListener('submit', e => {
   } else {
     it = {id:uid(), ...data, added:cur, pauses:[], prices:[{from:cur, amount, currency}]};
     state.items.push(it);
-    toast(ui.editing ? '原记录已不存在，已作为新支出保存' : '已添加 ' + name);
+    const now = new Date(), occ = occurrence(it, now.getFullYear(), now.getMonth());
+    if (!ui.editing && !it.auto && occ && occ < sod(now)) {
+      // 新加的固定支出、本月扣款日已经过了：大概率已经付过，先记为已付，免得一加上就标红、还被提醒
+      (state.paid[cur] ||= []).push(it.id);
+      toast(`已添加 ${name}，本月 ${occ.getDate()} 日已过，先记为已付（可在卡片上撤销）`);
+    } else toast(ui.editing ? '原记录已不存在，已作为新支出保存' : '已添加 ' + name);
   }
   setPause(it, $('#fPause').checked);
   dlg.close();
@@ -1334,6 +1347,7 @@ async function openSettings(focus) {
   $('#detectBox').hidden = true;
   notifyConf = null;
   for (const id of ['#sTgToken', '#sTgChat', '#sBarkBase', '#sBarkKey']) $(id).value = '';
+  setNotifyFields(false);
   $('#notifyPreview').textContent = '加载中…';
   $('#notifyLast').textContent = '';
   setDlg.showModal();
@@ -1353,11 +1367,16 @@ async function openSettings(focus) {
       : `每天 ${String(n.hour).padStart(2, '0')}:00 后检查一次（${st.tz}），还没有运行记录`;
   } catch (_) {
     $('#chanTg').textContent = $('#chanBark').textContent = '无法获取状态';
+    setNotifyFields(true);
     $('#notifyPreview').textContent = '无法获取预览';
   }
 }
 let notifyConf = null, lastCheck = {};
+function setNotifyFields(on) {
+  for (const id of ['#sTgToken', '#sTgChat', '#btnDetect', '#sBarkBase', '#sBarkKey']) $(id).disabled = !on;
+}
 function renderChan(st) {
+  setNotifyFields(true);
   const c = st.config || {}, tg = c.telegram || {}, bk = c.bark || {}, ck = st.check || {};
   notifyConf = c;
   $('#sTgToken').value = '';
@@ -1457,6 +1476,8 @@ $('#btnTest').onclick = async () => {
   } catch (_) { toast('发送失败，连不上服务器'); }
   b.disabled = false; b.textContent = '发送测试推送';
 };
+
+for (const d of [dlg, setDlg]) d.addEventListener('close', () => { const el = $('#toast'); if (el.parentNode !== document.body) document.body.appendChild(el); });
 
 /* ----- 其他 ----- */
 $('#btnAdd').onclick = () => openEditor(null);

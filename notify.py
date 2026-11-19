@@ -270,8 +270,11 @@ def _tg(token, method, params=None, timeout=10):
 def send_telegram(title, body):
     c = conf()
     chat = int(c["tg_chat"]) if c["tg_chat"].lstrip("-").isdigit() else c["tg_chat"]
+    text = f"{title}\n\n{body}"
+    if len(text) > 4000:  # Telegram 单条消息最多 4096 字，超出会被拒收
+        text = text[:3960].rsplit("\n", 1)[0] + "\n…（内容较多，其余请打开页面查看）"
     r = _post_json(f"https://api.telegram.org/bot{c['tg_token']}/sendMessage",
-                   {"chat_id": chat, "text": f"{title}\n\n{body}", "link_preview_options": {"is_disabled": True}}, 15)
+                   {"chat_id": chat, "text": text, "link_preview_options": {"is_disabled": True}}, 15)
     return bool(r.get("ok"))
 
 
